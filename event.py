@@ -12,6 +12,9 @@ arrayContour = [] # array finished contours
 tempColor = (0,255,0)
 finishColor = (0,255,255)
 thickness = 3 # thickness of line contours
+thDistance = 5 # min distance from click point to contour
+indexSelectedContour = -1
+selectedContour = False
 
 
 # draw ready poligons
@@ -19,7 +22,53 @@ def drawContours(image, contours, color):
     imgCopy = copy.deepcopy(image)
     cv2.polylines (imgCopy, contours, True, color, thickness) 
     return imgCopy
+
+
+def magnitude(v):
+    return np.sum(np.fromiter((vi ** 2 for vi in v), float))
+
+"""
+This function find minimal distance between point and segment
+
+Args:
+    a: Coordinates of point A of the segment AB. Type numpy.ndarray.
+    b: Coordinates of point B of the segment AB. Type numpy.ndarray.
+    p: Coordinates of point, distance for that find.
+
+Returns:
+    Minimal distance between point and segment. Type numpy.float64
+"""
+def minDistance(a, b, p): # a, b - coords of line, p - coords of click point
+    ab = b-a
+    bp = b-p
+    pa = p-a
+    dAB = magnitude(ab)
+    dBP = magnitude(bp)
+    dPA = magnitude(pa)
     
+    if dPA > (dBP + dAB) or dBP > (dPA + dAB):
+        if dPA < dBP:
+            minDistance = np.sqrt(dPA)
+        else:
+            minDistance = np.sqrt(dBP)
+    else:
+        minDistance = abs(ab[0]*p[1] - ab[1]*p[0] + b[1]*a[0] - b[0]*a[1])/np.sqrt(dAB)
+    return minDistance
+
+
+
+def distanceToConours(array, point):
+    distToContours = []
+    for contour in array:
+        distToSegments = []
+        for i in range(contour.shape[0]-1):
+            m = minDistance(contour[i], contour[i+1], point)
+            distToSegments.append(m)
+        distToSegments.append(minDistance(contour[-1], contour[0], point))
+        distToContours.append(min(distToSegments))
+    return distToContours
+
+
 # mouse callback function
 def mousePosition(event,x,y,flags,param):
     global currentContour
@@ -27,20 +76,32 @@ def mousePosition(event,x,y,flags,param):
     global pic
     global arrayContour
     global crossline
+    global indexSelectedContour
+    global selectedContour
+    
+    
     
     if event == cv2.EVENT_LBUTTONDOWN:
+            pic = drawContours(img, arrayContour, finishColor)
+            if currentContour.shape[0] == 0 and len(arrayContour)>0:
+                listDist = distanceToConours(arrayContour, np.array([x,y]))
+                md = min(listDist)
+                indexSelectedContour = listDist.index(md)
+                if md <= thDistance:
+                    selectedContour = True
+                    cv2.polylines (pic, [arrayContour[indexSelectedContour]], True , (0,0,255), thickness)
+                    cv2.putText(pic, "press 'Del' to delete", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
+                    return
+                
             drawing = True
             if crossline == True:
                 return
             
-            currentContour = np.append(currentContour, [x,y]) # add point coords to current array
+            currentContour = np.append(currentContour, [x,y]) # add point coords to currentContour
             currentContour = currentContour.reshape ((-1,2))
-
-
 
             if currentContour.shape[0] > 1:  # if polyline`s points in array >1 draw polyline
                 currentContour = currentContour.astype(np.int32)
-                pic = drawContours(img, arrayContour, finishColor)
                 cv2.polylines (pic, [currentContour], False , tempColor, thickness) #
                 
     if event == cv2.EVENT_MOUSEMOVE:
@@ -68,6 +129,7 @@ def mousePosition(event,x,y,flags,param):
     elif event == cv2.EVENT_RBUTTONDOWN: 
             drawing = False
             crossline = False
+            selectedContour = False
             if currentContour.shape[0] > 2:
                 arrayContour.append(currentContour)
             pic = drawContours(img, arrayContour, finishColor)
@@ -115,6 +177,7 @@ try:
 except IOError:
     pass
 
+
 cv2.namedWindow('image', flags= cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window with image size and without dropdown menu
 cv2.setMouseCallback('image',mousePosition)
 
@@ -123,7 +186,13 @@ while(1):
     k = cv2.waitKey(30)
     if k == 27: # Esc
         break
-
+    if k == 255: # Del
+        if selectedContour:
+            arrayContour.pop(indexSelectedContour)
+            selectedContour = False
+            pic = drawContours(img, arrayContour, finishColor)
+            
+            
 cv2.destroyAllWindows()
 
 
