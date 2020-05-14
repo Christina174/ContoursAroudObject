@@ -5,35 +5,48 @@ import pandas as pd
 
 drawing = False
 crossline = False
-#img = np.zeros((512,512,3), np.uint8)
-
-#img = cv2.imread('im2.jpg')
 
 currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
 #arrayContour = [] # array finished contours
-tempColor = (0,255,0)
-finishColor = (0,255,255)
+tempColor = (0,255,0) # color of polygon that haven't finished drawing
+finishColor = (0,255,255) # color finished contours
 thickness = 3 # thickness of line contours
 thDistance = 5 # min distance from click point to contour
-indexSelectedContour = -1
-selectedContour = False
-indexPics = 0
+indexSelectedContour = -1 # index of contour that we choose
+selectedContour = False # flag mean that we choose contour for delete
+indexPics = 0 # index current image
 
 pics = pd.read_csv('list.csv', header=None) # load list with pics path
-#img = cv2.imread(pics.iloc[indexPics][0])
-#pic = copy.deepcopy(img) # copy source image for drawing contours
-#numImage = pics.iloc[indexPics][0]
 if len(pics)==0:
     print('List have length = 0')
     pass
 
-# draw ready poligons
+
+"""
+This function draw ready poligons on image
+
+Args:
+    image: source image
+    contours: array finished contours
+    color: color finished contours
+
+Returns:
+    Deep copy of source image with finished contours
+"""
 def drawContours(image, contours, color): 
     imgCopy = copy.deepcopy(image)
     cv2.polylines (imgCopy, contours, True, color, thickness) 
     return imgCopy
 
+"""
+This function draw ready poligons on image
 
+Args:
+    v: vector. Type numpy.ndarray.
+
+Returns:
+    Square of the vector length
+"""
 def magnitude(v):
     return np.sum(np.fromiter((vi ** 2 for vi in v), float))
 
@@ -55,7 +68,6 @@ def minDistance(a, b, p): # a, b - coords of line, p - coords of click point
     dAB = magnitude(ab)
     dBP = magnitude(bp)
     dPA = magnitude(pa)
-    
     if dPA > (dBP + dAB) or dBP > (dPA + dAB):
         if dPA < dBP:
             minDistance = np.sqrt(dPA)
@@ -65,16 +77,25 @@ def minDistance(a, b, p): # a, b - coords of line, p - coords of click point
         minDistance = abs(ab[0]*p[1] - ab[1]*p[0] + b[1]*a[0] - b[0]*a[1])/np.sqrt(dAB)
     return minDistance
 
+"""
+This function generates list of minimal distances from point to each contours
 
-def distanceToConours(array, point):
-    distToContours = []
+Args:
+    array: list of finished contours
+    point: coordinates of current point
+
+Returns:
+    List of minimal distances from point to each contours
+"""
+def distanceToContours(array, point):
+    distToContours = [] # list of minimal distances from point to each contour
     for contour in array:
-        distToSegments = []
-        for i in range(contour.shape[0]-1):
+        distToSegments = [] # list of distances to each line of contour
+        for i in range(contour.shape[0]-1): # determining the distance from the point to all segments of the contour
             m = minDistance(contour[i], contour[i+1], point)
             distToSegments.append(m)
-        distToSegments.append(minDistance(contour[-1], contour[0], point))
-        distToContours.append(min(distToSegments))
+        distToSegments.append(minDistance(contour[-1], contour[0], point)) # minimal distance from a point to the segment that closes the contour
+        distToContours.append(min(distToSegments)) # choose minimal distance to contour
     return distToContours
 
 
@@ -92,7 +113,7 @@ def mousePosition(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDOWN:
             pic = drawContours(img, arrayContour, finishColor)
             if currentContour.shape[0] == 0 and len(arrayContour)>0:
-                listDist = distanceToConours(arrayContour, np.array([x,y]))
+                listDist = distanceToContours(arrayContour, np.array([x,y]))
                 md = min(listDist)
                 indexSelectedContour = listDist.index(md)
                 if md <= thDistance:
@@ -108,7 +129,7 @@ def mousePosition(event,x,y,flags,param):
             currentContour = np.append(currentContour, [x,y]) # add point coords to currentContour
             currentContour = currentContour.reshape ((-1,2))
 
-            if currentContour.shape[0] > 1:  # if polyline`s points in array >1 draw polyline
+            if currentContour.shape[0] > 1:  # if polyline`s points in array >1, draw polyline
                 currentContour = currentContour.astype(np.int32)
                 cv2.polylines (pic, [currentContour], False , tempColor, thickness) #
                 
@@ -203,16 +224,23 @@ def saveJson(filename, arrayContour):
     with open(filename, 'w') as f:
         f.write(json.dumps(arrayContourJson, indent=4))
 
+"""
+This function choose new image from csv-file and create window, loading early saved contours
 
+Args:
+    indexPics: index of new image
+
+Returns:
+    Filename for saving json-file, numImage - name current image, pic-copy of image with drawn contours, arrayContour-array of finished contours, img - source image
+"""
 def createImage(indexPics): # load data and create new window
         numImage = pics.iloc[indexPics][0]
         img = cv2.imread(numImage)
         filename = numImage+'.json' 
         arrayContour = loadJson(filename)
         pic = drawContours(img, arrayContour, finishColor)
-        cv2.namedWindow(numImage, flags= cv2.WINDOW_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window with image size and without dropdown menu
+        cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window with image size and without dropdown menu
         cv2.setMouseCallback(numImage,mousePosition)
-        
         return filename, numImage, pic, arrayContour, img
     
 
@@ -235,14 +263,13 @@ while(1):
         newIndexPic = indexPics + 1
     if newIndexPic >= len(pics) or newIndexPic <= -len(pics): # new cycle of list with pics
         newIndexPic = 0
-    
     if newIndexPic != indexPics:
         # save data and destroy window
         cv2.destroyWindow(numImage)
         saveJson(filename, arrayContour)
         
         indexPics = newIndexPic
-        filename, numImage, pic, arrayContour, img = createImage(indexPics)
+        filename, numImage, pic, arrayContour, img = createImage(indexPics) #create next image
         
 
 cv2.destroyAllWindows()
