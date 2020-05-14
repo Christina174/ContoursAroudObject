@@ -1,21 +1,31 @@
 import cv2
 import numpy as np
 import copy
+import pandas as pd
 
 drawing = False
 crossline = False
 #img = np.zeros((512,512,3), np.uint8)
-img = cv2.imread('im2.jpg')
-pic = copy.deepcopy(img) # copy source image for drawing contours
+
+#img = cv2.imread('im2.jpg')
+
 currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
-arrayContour = [] # array finished contours
+#arrayContour = [] # array finished contours
 tempColor = (0,255,0)
 finishColor = (0,255,255)
 thickness = 3 # thickness of line contours
 thDistance = 5 # min distance from click point to contour
 indexSelectedContour = -1
 selectedContour = False
+indexPics = 0
 
+pics = pd.read_csv('list.csv', header=None) # load list with pics path
+#img = cv2.imread(pics.iloc[indexPics][0])
+#pic = copy.deepcopy(img) # copy source image for drawing contours
+#numImage = pics.iloc[indexPics][0]
+if len(pics)==0:
+    print('List have length = 0')
+    pass
 
 # draw ready poligons
 def drawContours(image, contours, color): 
@@ -56,7 +66,6 @@ def minDistance(a, b, p): # a, b - coords of line, p - coords of click point
     return minDistance
 
 
-
 def distanceToConours(array, point):
     distToContours = []
     for contour in array:
@@ -78,8 +87,7 @@ def mousePosition(event,x,y,flags,param):
     global crossline
     global indexSelectedContour
     global selectedContour
-    
-    
+
     
     if event == cv2.EVENT_LBUTTONDOWN:
             pic = drawContours(img, arrayContour, finishColor)
@@ -155,34 +163,64 @@ def mousePosition(event,x,y,flags,param):
     #{
     #}
 #]
+
 import json
 
-filename = 'arrayContours.json'
-try:
-    with open(filename) as f:
-        arrayContourJson = json.load(f)
-        #print(len(arrayContourJson))
-        #arrayContour = []
-        for element in arrayContourJson:
-            #print(element)
-            pts = np.array ([])
-            for point in element["contour"]:
-                pts = np.append(pts, [point["x"],point["y"]])
-                
-            pts = pts.astype(np.int32)
-            pts = pts.reshape ((-1,2))
-            arrayContour.append(pts)
-            #print(arrayContour)
+
+def loadJson(filename):
+    arrayContour = []
+    try:
+        with open(filename) as f:
+            arrayContourJson = json.load(f)
+            for element in arrayContourJson:
+                pts = np.array ([])
+                for point in element["contour"]:
+                    pts = np.append(pts, [point["x"],point["y"]])
+                    
+                pts = pts.astype(np.int32)
+                pts = pts.reshape ((-1,2))
+                arrayContour.append(pts)
+            
+    except IOError:
+        pass
+    return arrayContour
+
+
+def saveJson(filename, arrayContour):
+    arrayContourJson = []
+    for contour in arrayContour:
+        countourJson = []
+        for i in range(contour.shape[0]):
+            point = dict()
+            point["x"] = int(contour[i,0])
+            point["y"] = int(contour[i,1])
+            countourJson.append(point)
+        
+        element = dict()
+        element["contour"] = countourJson
+        arrayContourJson.append(element)
+        
+    with open(filename, 'w') as f:
+        f.write(json.dumps(arrayContourJson, indent=4))
+
+
+def createImage(indexPics): # load data and create new window
+        numImage = pics.iloc[indexPics][0]
+        img = cv2.imread(numImage)
+        filename = numImage+'.json' 
+        arrayContour = loadJson(filename)
         pic = drawContours(img, arrayContour, finishColor)
-except IOError:
-    pass
+        cv2.namedWindow(numImage, flags= cv2.WINDOW_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window with image size and without dropdown menu
+        cv2.setMouseCallback(numImage,mousePosition)
+        
+        return filename, numImage, pic, arrayContour, img
+    
 
-
-cv2.namedWindow('image', flags= cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window with image size and without dropdown menu
-cv2.setMouseCallback('image',mousePosition)
+newIndexPic = indexPics
+filename, numImage, pic, arrayContour, img = createImage(indexPics) #create the first image
 
 while(1):
-    cv2.imshow('image',pic) #
+    cv2.imshow(numImage,pic) #
     k = cv2.waitKey(30)
     if k == 27: # Esc
         break
@@ -191,25 +229,20 @@ while(1):
             arrayContour.pop(indexSelectedContour)
             selectedContour = False
             pic = drawContours(img, arrayContour, finishColor)
-            
-            
+    if k == 97: # Left bottom 'a'
+        newIndexPic = indexPics -1
+    if k == 100: # Right bottom 'd'
+        newIndexPic = indexPics + 1
+    if newIndexPic >= len(pics) or newIndexPic <= -len(pics): # new cycle of list with pics
+        newIndexPic = 0
+    
+    if newIndexPic != indexPics:
+        # save data and destroy window
+        cv2.destroyWindow(numImage)
+        saveJson(filename, arrayContour)
+        
+        indexPics = newIndexPic
+        filename, numImage, pic, arrayContour, img = createImage(indexPics)
+        
+
 cv2.destroyAllWindows()
-
-
-arrayContourJson = []
-for contour in arrayContour:
-    countourJson = []
-    for i in range(contour.shape[0]):
-        point = dict()
-        point["x"] = int(contour[i,0])
-        point["y"] = int(contour[i,1])
-        countourJson.append(point)
-    
-    element = dict()
-    element["contour"] = countourJson
-    arrayContourJson.append(element)
-    
-    
-with open('arrayContours.json', 'w') as f:
-    f.write(json.dumps(arrayContourJson, indent=4))
-

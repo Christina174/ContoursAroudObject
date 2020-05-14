@@ -18,7 +18,7 @@ while(1):
         i+=1
     if k == 27: # Esc
         break
-    if i >= len(pics) or i <= -len(pics): # new cycle 
+    if i >= len(pics) or i <= -len(pics): # new cycle of list with pics
         i = 0
     cv2.destroyWindow(r)
 
