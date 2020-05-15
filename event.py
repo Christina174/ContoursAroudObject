@@ -23,7 +23,7 @@ if len(pics)==0:
 
 
 """
-This function draw ready poligons on image
+This function draw poligons on image
 
 Args:
     image: source image
@@ -39,13 +39,13 @@ def drawContours(image, contours, color):
     return imgCopy
 
 """
-This function draw ready poligons on image
+This function calculates the square of the vector length
 
 Args:
     v: vector. Type numpy.ndarray.
 
 Returns:
-    Square of the vector length
+    Square of the vector length. Type numpy.float64
 """
 def magnitude(v):
     return np.sum(np.fromiter((vi ** 2 for vi in v), float))
@@ -112,11 +112,11 @@ def mousePosition(event,x,y,flags,param):
     
     if event == cv2.EVENT_LBUTTONDOWN:
             pic = drawContours(img, arrayContour, finishColor)
-            if currentContour.shape[0] == 0 and len(arrayContour)>0:
+            if currentContour.shape[0] == 0 and len(arrayContour)>0: # if the first click and array of finished contours have coordinates, we test distance between point and contours
                 listDist = distanceToContours(arrayContour, np.array([x,y]))
                 md = min(listDist)
                 indexSelectedContour = listDist.index(md)
-                if md <= thDistance:
+                if md <= thDistance: # if minimal distance from point to contour smaller threshhold => choose contour
                     selectedContour = True
                     cv2.polylines (pic, [arrayContour[indexSelectedContour]], True , (0,0,255), thickness)
                     cv2.putText(pic, "press 'Del' to delete", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
@@ -163,7 +163,7 @@ def mousePosition(event,x,y,flags,param):
                 arrayContour.append(currentContour)
             pic = drawContours(img, arrayContour, finishColor)
             currentContour = np.array ([])
-            #print(arrayContour)
+
 
 # json file example
 #[
@@ -187,7 +187,15 @@ def mousePosition(event,x,y,flags,param):
 
 import json
 
+"""
+This function open json-file named as current image with coordinates "x": , "y":  contours and add to array arrayContour
 
+Args:
+    filename: json-file named as image
+
+Returns:
+    List of contours
+"""
 def loadJson(filename):
     arrayContour = []
     try:
@@ -206,7 +214,16 @@ def loadJson(filename):
         pass
     return arrayContour
 
+"""
+This function create arrayContourJson - list of coordinates "x": , "y":  contours and write it in file
 
+Args:
+    filename: json-file named as image
+    arrayContour: array of finished contours
+
+Returns:
+    In final, open json-file named as image and write
+"""
 def saveJson(filename, arrayContour):
     arrayContourJson = []
     for contour in arrayContour:
