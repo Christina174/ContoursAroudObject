@@ -5,21 +5,18 @@ import pandas as pd
 
 drawing = False
 crossline = False
-
+selectedContour = False # flag mean that we choose contour for delete
+indexSelectedContour = -1 # index of contour that we choose
 currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
+
 #arrayContour = [] # array finished contours
 tempColor = (0,255,0) # color of polygon that haven't finished drawing
 finishColor = (0,255,255) # color finished contours
 thickness = 3 # thickness of line contours
 thDistance = 5 # min distance from click point to contour
-indexSelectedContour = -1 # index of contour that we choose
-selectedContour = False # flag mean that we choose contour for delete
+
 indexPics = 0 # index current image
 
-pics = pd.read_csv('list.csv', header=None) # load list images
-if len(pics)==0:
-    print('List have length = 0')
-    pass
 
 
 """
@@ -254,15 +251,43 @@ Returns:
     img - loaded image
 """
 def createImage(indexPics): # load data and create new window
-        numImage = pics.iloc[indexPics][0]
-        img = cv2.imread(numImage)
-        filename = numImage+'.json' 
-        arrayContour = loadJson(filename)
-        pic = drawContours(img, arrayContour, finishColor)
-        cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window without dropdown menu and with image size
-        cv2.setMouseCallback(numImage,mousePosition)
-        return filename, numImage, pic, arrayContour, img
+    global drawing
+    global crossline
+    global selectedContour
+    global indexSelectedContour
+    global currentContour
     
+    drawing = False
+    crossline = False
+    selectedContour = False # flag mean that we choose contour for delete
+    indexSelectedContour = -1 # index of contour that we choose
+    currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
+    numImage = pics.iloc[indexPics][0]
+    img = cv2.imread(numImage)
+    filename = numImage+'.json' 
+    arrayContour = loadJson(filename)
+    pic = drawContours(img, arrayContour, finishColor)
+    cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL ) #| cv2.WINDOW_AUTOSIZE settings params window without dropdown menu and with image size
+    cv2.setMouseCallback(numImage,mousePosition)
+    return filename, numImage, pic, arrayContour, img
+    
+
+def deleteContour():
+    if selectedContour:
+        arrayContour.pop(indexSelectedContour)
+        selectedContour = False
+        pic = drawContours(img, arrayContour, finishColor)
+
+def destroyImage():
+    # save data and destroy window
+    cv2.destroyWindow(numImage)
+    saveJson(filename, arrayContour)
+   
+   
+pics = pd.read_csv('list.csv', header=None) # load list images
+if len(pics)==0:
+    print('List have length = 0')
+    pass
 
 newIndexPic = indexPics
 filename, numImage, pic, arrayContour, img = createImage(indexPics) #create the first image
@@ -273,10 +298,7 @@ while(1):
     if k == 27: # Esc
         break
     if k == 255: # Del
-        if selectedContour:
-            arrayContour.pop(indexSelectedContour)
-            selectedContour = False
-            pic = drawContours(img, arrayContour, finishColor)
+        deleteContour()
     if k == 97: # Left bottom 'a'
         newIndexPic = indexPics -1
     if k == 100: # Right bottom 'd'
@@ -284,10 +306,7 @@ while(1):
     if newIndexPic >= len(pics) or newIndexPic <= -len(pics): # new cycle of list with pics
         newIndexPic = 0
     if newIndexPic != indexPics:
-        # save data and destroy window
-        cv2.destroyWindow(numImage)
-        saveJson(filename, arrayContour)
-        
+        destroyImage()
         indexPics = newIndexPic
         filename, numImage, pic, arrayContour, img = createImage(indexPics) #create next image
         
