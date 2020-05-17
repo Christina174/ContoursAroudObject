@@ -16,7 +16,7 @@ indexSelectedContour = -1 # index of contour that we choose
 selectedContour = False # flag mean that we choose contour for delete
 indexPics = 0 # index current image
 
-pics = pd.read_csv('list.csv', header=None) # load list with pics path
+pics = pd.read_csv('list.csv', header=None) # load list images
 if len(pics)==0:
     print('List have length = 0')
     pass
@@ -51,7 +51,7 @@ def magnitude(v):
     return np.sum(np.fromiter((vi ** 2 for vi in v), float))
 
 """
-This function find minimal distance between point and segment
+This function find minimal distance between point and segment in 2-D
 
 Args:
     a: Coordinates of point A of the segment AB. Type numpy.ndarray.
@@ -81,11 +81,11 @@ def minDistance(a, b, p): # a, b - coords of line, p - coords of click point
 This function generates list of minimal distances from point to each contours
 
 Args:
-    array: list of finished contours
-    point: coordinates of current point
+    array: list of contours
+    point: coordinates of point
 
 Returns:
-    List of minimal distances from point to each contours
+    List of minimal distances from point to each contours.
 """
 def distanceToContours(array, point):
     distToContours = [] # list of minimal distances from point to each contour
@@ -165,36 +165,38 @@ def mousePosition(event,x,y,flags,param):
             currentContour = np.array ([])
 
 
-# json file example
-#[
-    #{
-            #"class" : "cruassan",
-            #"contour" : 
-                #[
-                    #{
-                        #"x" : 0,
-                        #"y" : 0
-                    #},
-                    #{
-                        #"x" : 10,
-                        #"y" : 10
-                    #}
-                #]
-    #},
-    #{
-    #}
-#]
+
 
 import json
 
 """
-This function open json-file named as current image with coordinates "x": , "y":  contours and add to array arrayContour
+This function read json-file with structure:
+# json file example
+[
+    {
+            "contour" : 
+                [
+                    {
+                        "x" : 0,
+                        "y" : 0
+                    },
+                    {
+                        "x" : 10,
+                        "y" : 10
+                    }
+                ]
+    },
+    {
+    }
+]
+
+and get list of contours.
 
 Args:
-    filename: json-file named as image
+    filename: name of json-file 
 
 Returns:
-    List of contours
+    List of contours. Element of list is contour. Every contour have a type numpy.ndarray, dimention (n, 2), n-number points in contour.  
 """
 def loadJson(filename):
     arrayContour = []
@@ -215,14 +217,11 @@ def loadJson(filename):
     return arrayContour
 
 """
-This function create arrayContourJson - list of coordinates "x": , "y":  contours and write it in file
+This function save contour in text file as json
 
 Args:
-    filename: json-file named as image
-    arrayContour: array of finished contours
-
-Returns:
-    In final, open json-file named as image and write
+    filename: name of json-file
+    arrayContour: array of contours
 """
 def saveJson(filename, arrayContour):
     arrayContourJson = []
@@ -242,13 +241,17 @@ def saveJson(filename, arrayContour):
         f.write(json.dumps(arrayContourJson, indent=4))
 
 """
-This function choose new image from csv-file and create window, loading early saved contours
+This function load image by index and create new window, loading early saved contours for this image
 
 Args:
     indexPics: index of new image
 
 Returns:
-    Filename for saving json-file, numImage - name current image, pic-copy of image with drawn contours, arrayContour-array of finished contours, img - source image
+    filename - name of json-file
+    numImage - name image
+    pic - deepcopy of source image with drawn contours
+    arrayContour - array of contours
+    img - loaded image
 """
 def createImage(indexPics): # load data and create new window
         numImage = pics.iloc[indexPics][0]
@@ -256,7 +259,7 @@ def createImage(indexPics): # load data and create new window
         filename = numImage+'.json' 
         arrayContour = loadJson(filename)
         pic = drawContours(img, arrayContour, finishColor)
-        cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window with image size and without dropdown menu
+        cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE ) # settings params window without dropdown menu and with image size
         cv2.setMouseCallback(numImage,mousePosition)
         return filename, numImage, pic, arrayContour, img
     
