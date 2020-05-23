@@ -244,22 +244,22 @@ class Contour:
         if self.selectedContour:
             self.arrayContour.pop(self.indexSelectedContour)
             self.selectedContour = False
-            drawContours()
+            self.drawContours()
             
 
         
     # mouse callback function
     def mousePosition(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-                drawContours()
+                self.drawContours()
                 if self.currentContour.shape[0] == 0 and len(self.arrayContour)>0: # if the first click and array of finished contours have coordinates, we test distance between point and contours
                     listDist = distanceToContours(self.arrayContour, np.array([x,y]))
                     md = min(listDist)
                     self.indexSelectedContour = listDist.index(md)
                     if md <= thDistance: # if minimal distance from point to contour smaller threshhold => choose contour
                         self.selectedContour = True
-                        cv2.polylines (pic, [self.arrayContour[self.indexSelectedContour]], True , (0,0,255), thickness)
-                        cv2.putText(pic, "press 'Del' to delete", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
+                        cv2.polylines (self.pic, [self.arrayContour[self.indexSelectedContour]], True , (0,0,255), thickness)
+                        cv2.putText(self.pic, "press 'Del' to delete", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
                         return
                     
                 self.drawing = True
@@ -278,7 +278,7 @@ class Contour:
                         currentContour2 = np.append(self.currentContour, [x,y])
                         currentContour2 = currentContour2.reshape ((-1,2))
                         currentContour2 = currentContour2.astype(np.int32)
-                        drawContours() #pic = 
+                        self.drawContours() #pic = 
                         cv2.polylines (self.pic, [currentContour2], False , tempColor, thickness) #
                 #test on cross lines
                 if self.currentContour.shape[0] > 2:
@@ -301,11 +301,10 @@ class Contour:
                 self.selectedContour = False
                 if self.currentContour.shape[0] > 2:
                     self.arrayContour.append(self.currentContour)
-                drawContours() #pic = 
+                self.drawContours() #pic = 
                 self.currentContour = np.array ([])
 
     def imShow(self):
-        print(self.pic.shape)
         cv2.imshow(self.imageFileName, self.pic)
 
     
