@@ -4,12 +4,8 @@ import copy
 import pandas as pd
 
 
-
 #arrayContour = [] # array finished contours
-
 indexPics = 0 # index current image
-
-
 
 
 """
@@ -71,8 +67,6 @@ def distanceToContours(array, point):
         distToSegments.append(minDistance(contour[-1], contour[0], point)) # minimal distance from a point to the segment that closes the contour
         distToContours.append(min(distToSegments)) # choose minimal distance to contour
     return distToContours
-
-
 
 
 import json
@@ -148,62 +142,15 @@ def saveJson(filename, arrayContour):
     with open(filename, 'w') as f:
         f.write(json.dumps(arrayContourJson, indent=4))
 
-"""
-This function load image by index and create new window, loading early saved contours for this image
-
-Args:
-    indexPics: index of new image
-
-Returns:
-    filename - name of json-file
-    numImage - name image
-    pic - deepcopy of source image with drawn contours
-    arrayContour - array of contours
-    img - loaded image
-"""
-#def createImage(indexPics): # load data and create new window
-    #global drawing
-    #global crossline
-    #global selectedContour
-    #global indexSelectedContour
-    #global currentContour
-    
-    #drawing = False
-    #crossline = False
-    #selectedContour = False # flag mean that we choose contour for delete
-    #indexSelectedContour = -1 # index of contour that we choose
-    #currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
-    #numImage = pics.iloc[indexPics][0]
-    #img = cv2.imread(numImage)
-    #filename = numImage+'.json' 
-    #arrayContour = loadJson(filename)
-    #pic = drawContours(img, arrayContour, finishColor)
-    #cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL ) #| cv2.WINDOW_AUTOSIZE settings params window without dropdown menu and with image size
-    #cv2.setMouseCallback(numImage,mousePosition)
-    #return filename, numImage, pic, arrayContour, img
-    
 
 tempColor = (0,255,0) # color of polygon that haven't finished drawing
 finishColor = (0,255,255) # color finished contours
 thickness = 3 # thickness of line contours
 thDistance = 5 # min distance from click point to contour
 
-   
-"""
-This function load image by index and create new window, loading early saved contours for this image
 
-Args:
-    indexPics: index of new image
-
-Returns:
-    filename - name of json-file
-    numImage - name image
-    pic - deepcopy of source image with drawn contours
-    arrayContour - array of contours
-    img - loaded image
-"""
 class Contour:
-#"""saveJson
+#"""
 #This function draw poligons on image
 
 #Args:
@@ -220,7 +167,7 @@ class Contour:
         cv2.polylines (self.pic, self.arrayContour, True, finishColor, thickness)     
     
     def __init__(self, imageFileName):
-        self.imageFileName = imageFileName
+        self.imageFileName = imageFileName # name image
         self.drawing = False
         self.crossline = False
         self.selectedContour = False # flag mean that we choose contour for delete
@@ -246,8 +193,6 @@ class Contour:
             self.selectedContour = False
             self.drawContours()
             
-
-        
     # mouse callback function
     def mousePosition(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -314,7 +259,6 @@ if len(pics)==0:
     pass
 
 newIndexPic = indexPics
-#filename, numImage, pic, arrayContour, img = createImage(indexPics) 
 
 contour = Contour(pics.iloc[indexPics][0]) #create the first image
 
