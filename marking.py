@@ -3,37 +3,14 @@ import numpy as np
 import copy
 import pandas as pd
 
-drawing = False
-crossline = False
-selectedContour = False # flag mean that we choose contour for delete
-indexSelectedContour = -1 # index of contour that we choose
-currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
+
 
 #arrayContour = [] # array finished contours
-tempColor = (0,255,0) # color of polygon that haven't finished drawing
-finishColor = (0,255,255) # color finished contours
-thickness = 3 # thickness of line contours
-thDistance = 5 # min distance from click point to contour
 
 indexPics = 0 # index current image
 
 
 
-"""
-This function draw poligons on image
-
-Args:
-    image: source image
-    contours: array finished contours
-    color: color finished contours
-
-Returns:
-    Deep copy of source image with finished contours
-"""
-def drawContours(image, contours, color): 
-    imgCopy = copy.deepcopy(image)
-    cv2.polylines (imgCopy, contours, True, color, thickness) 
-    return imgCopy
 
 """
 This function calculates the square of the vector length
@@ -94,72 +71,6 @@ def distanceToContours(array, point):
         distToSegments.append(minDistance(contour[-1], contour[0], point)) # minimal distance from a point to the segment that closes the contour
         distToContours.append(min(distToSegments)) # choose minimal distance to contour
     return distToContours
-
-
-# mouse callback function
-def mousePosition(event,x,y,flags,param):
-    global currentContour
-    global drawing
-    global pic
-    global arrayContour
-    global crossline
-    global indexSelectedContour
-    global selectedContour
-
-    
-    if event == cv2.EVENT_LBUTTONDOWN:
-            pic = drawContours(img, arrayContour, finishColor)
-            if currentContour.shape[0] == 0 and len(arrayContour)>0: # if the first click and array of finished contours have coordinates, we test distance between point and contours
-                listDist = distanceToContours(arrayContour, np.array([x,y]))
-                md = min(listDist)
-                indexSelectedContour = listDist.index(md)
-                if md <= thDistance: # if minimal distance from point to contour smaller threshhold => choose contour
-                    selectedContour = True
-                    cv2.polylines (pic, [arrayContour[indexSelectedContour]], True , (0,0,255), thickness)
-                    cv2.putText(pic, "press 'Del' to delete", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
-                    return
-                
-            drawing = True
-            if crossline == True:
-                return
-            
-            currentContour = np.append(currentContour, [x,y]) # add point coords to currentContour
-            currentContour = currentContour.reshape ((-1,2))
-
-            if currentContour.shape[0] > 1:  # if polyline`s points in array >1, draw polyline
-                currentContour = currentContour.astype(np.int32)
-                cv2.polylines (pic, [currentContour], False , tempColor, thickness) #
-                
-    if event == cv2.EVENT_MOUSEMOVE:
-            if currentContour.shape[0] > 0 and drawing == True:
-                    currentContour2 = np.append(currentContour, [x,y])
-                    currentContour2 = currentContour2.reshape ((-1,2))
-                    currentContour2 = currentContour2.astype(np.int32)
-                    pic = drawContours(img, arrayContour, finishColor)
-                    cv2.polylines (pic, [currentContour2], False , tempColor, thickness) #
-            #test on cross lines
-            if currentContour.shape[0] > 2:
-                X1,Y1,X2,Y2 = (currentContour[-1][0], currentContour[-1][1], x, y) #current line
-                for i in range(len(currentContour)-2):
-                    X3,Y3,X4,Y4 = (currentContour[i][0], currentContour[i][1], currentContour[i+1][0], currentContour[i+1][1]) #previous line
-                    cL1 = ((X3-X1)*(Y2-Y1)-(Y3-Y1)*(X2-X1))*((X4-X1)*(Y2-Y1)-(Y4-Y1)*(X2-X1))
-                    cL2 = ((X1-X3)*(Y4-Y3)-(Y1-Y3)*(X4-X3))*((X2-X3)*(Y4-Y3)-(Y2-Y3)*(X4-X3))
-                    if cL1<=0 and cL2<=0:
-                        cv2.putText(pic, "Crossing lines", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2)
-                        crossline = True
-                        break
-                    else:
-                        crossline = False
-                
-    #stop draw current contours and add points to array contours
-    elif event == cv2.EVENT_RBUTTONDOWN: 
-            drawing = False
-            crossline = False
-            selectedContour = False
-            if currentContour.shape[0] > 2:
-                arrayContour.append(currentContour)
-            pic = drawContours(img, arrayContour, finishColor)
-            currentContour = np.array ([])
 
 
 
@@ -250,40 +161,149 @@ Returns:
     arrayContour - array of contours
     img - loaded image
 """
-def createImage(indexPics): # load data and create new window
-    global drawing
-    global crossline
-    global selectedContour
-    global indexSelectedContour
-    global currentContour
+#def createImage(indexPics): # load data and create new window
+    #global drawing
+    #global crossline
+    #global selectedContour
+    #global indexSelectedContour
+    #global currentContour
     
-    drawing = False
-    crossline = False
-    selectedContour = False # flag mean that we choose contour for delete
-    indexSelectedContour = -1 # index of contour that we choose
-    currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
-    numImage = pics.iloc[indexPics][0]
-    img = cv2.imread(numImage)
-    filename = numImage+'.json' 
-    arrayContour = loadJson(filename)
-    pic = drawContours(img, arrayContour, finishColor)
-    cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL ) #| cv2.WINDOW_AUTOSIZE settings params window without dropdown menu and with image size
-    cv2.setMouseCallback(numImage,mousePosition)
-    return filename, numImage, pic, arrayContour, img
+    #drawing = False
+    #crossline = False
+    #selectedContour = False # flag mean that we choose contour for delete
+    #indexSelectedContour = -1 # index of contour that we choose
+    #currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
+    #numImage = pics.iloc[indexPics][0]
+    #img = cv2.imread(numImage)
+    #filename = numImage+'.json' 
+    #arrayContour = loadJson(filename)
+    #pic = drawContours(img, arrayContour, finishColor)
+    #cv2.namedWindow(numImage, flags= cv2.WINDOW_GUI_NORMAL ) #| cv2.WINDOW_AUTOSIZE settings params window without dropdown menu and with image size
+    #cv2.setMouseCallback(numImage,mousePosition)
+    #return filename, numImage, pic, arrayContour, img
     
 
-def deleteContour():
-    if selectedContour:
-        arrayContour.pop(indexSelectedContour)
-        selectedContour = False
-        pic = drawContours(img, arrayContour, finishColor)
 
-def destroyImage():
-    # save data and destroy window
-    cv2.destroyWindow(numImage)
-    saveJson(filename, arrayContour)
    
-   
+"""
+This function load image by index and create new window, loading early saved contours for this image
+
+Args:
+    indexPics: index of new image
+
+Returns:
+    filename - name of json-file
+    numImage - name image
+    pic - deepcopy of source image with drawn contours
+    arrayContour - array of contours
+    img - loaded image
+"""
+class Contour:
+    def __init__(imageFileName):
+        self.imageFileName = imageFileName
+        self.tempColor = (0,255,0) # color of polygon that haven't finished drawing
+        self.finishColor = (0,255,255) # color finished contours
+        self.thickness = 3 # thickness of line contours
+        self.thDistance = 5 # min distance from click point to contour
+        self.drawing = False
+        self.crossline = False
+        self.selectedContour = False # flag mean that we choose contour for delete
+        self.indexSelectedContour = -1 # index of contour that we choose
+        self.currentContour = np.array ([]) # array  points of polygon that haven't finished drawing
+        self.img = cv2.imread(imageFileName)
+        self.jsonFileName = imageFileName+'.json' 
+        self.arrayContour = loadJson(filename)
+        self.pic = None
+        
+        drawContours(finishColor)
+        cv2.namedWindow(imageFileName, flags= cv2.WINDOW_GUI_NORMAL ) #| cv2.WINDOW_AUTOSIZE settings params window without dropdown menu and with image size
+        cv2.setMouseCallback(imageFileName, self.mousePosition)
+
+    def destroyImage(self):
+        # save data and destroy window
+        cv2.destroyWindow(self.imageFileName)
+        saveJson(filename, arrayContour)
+        
+    def deleteContour(self):
+        if self.selectedContour:
+            self.arrayContour.pop(self.indexSelectedContour)
+            self.selectedContour = False
+            drawContours(finishColor)
+            
+"""
+This function draw poligons on image
+
+Args:
+    image: source image
+    contours: array finished contours
+    color: color finished contours
+
+Returns:
+    Deep copy of source image with finished contours
+"""
+    def drawContours(self, color): 
+        self.pic = copy.deepcopy(self.img)
+        cv2.polylines (self.pic, self.arrayContour, True, color, self.thickness) 
+        
+    # mouse callback function
+    def mousePosition(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+                drawContours(finishColor)
+                if self.currentContour.shape[0] == 0 and len(arrayContour)>0: # if the first click and array of finished contours have coordinates, we test distance between point and contours
+                    listDist = distanceToContours(arrayContour, np.array([x,y]))
+                    md = min(listDist)
+                    indexSelectedContour = listDist.index(md)
+                    if md <= thDistance: # if minimal distance from point to contour smaller threshhold => choose contour
+                        selectedContour = True
+                        cv2.polylines (pic, [arrayContour[indexSelectedContour]], True , (0,0,255), thickness)
+                        cv2.putText(pic, "press 'Del' to delete", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 2)
+                        return
+                    
+                drawing = True
+                if crossline == True:
+                    return
+                
+                currentContour = np.append(currentContour, [x,y]) # add point coords to currentContour
+                currentContour = currentContour.reshape ((-1,2))
+
+                if currentContour.shape[0] > 1:  # if polyline`s points in array >1, draw polyline
+                    currentContour = currentContour.astype(np.int32)
+                    cv2.polylines (pic, [currentContour], False , tempColor, thickness) #
+                    
+        if event == cv2.EVENT_MOUSEMOVE:
+                if currentContour.shape[0] > 0 and drawing == True:
+                        currentContour2 = np.append(currentContour, [x,y])
+                        currentContour2 = currentContour2.reshape ((-1,2))
+                        currentContour2 = currentContour2.astype(np.int32)
+                        pic = drawContours(img, arrayContour, finishColor)
+                        cv2.polylines (pic, [currentContour2], False , tempColor, thickness) #
+                #test on cross lines
+                if currentContour.shape[0] > 2:
+                    X1,Y1,X2,Y2 = (currentContour[-1][0], currentContour[-1][1], x, y) #current line
+                    for i in range(len(currentContour)-2):
+                        X3,Y3,X4,Y4 = (currentContour[i][0], currentContour[i][1], currentContour[i+1][0], currentContour[i+1][1]) #previous line
+                        cL1 = ((X3-X1)*(Y2-Y1)-(Y3-Y1)*(X2-X1))*((X4-X1)*(Y2-Y1)-(Y4-Y1)*(X2-X1))
+                        cL2 = ((X1-X3)*(Y4-Y3)-(Y1-Y3)*(X4-X3))*((X2-X3)*(Y4-Y3)-(Y2-Y3)*(X4-X3))
+                        if cL1<=0 and cL2<=0:
+                            cv2.putText(pic, "Crossing lines", (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2)
+                            crossline = True
+                            break
+                        else:
+                            crossline = False
+                    
+        #stop draw current contours and add points to array contours
+        elif event == cv2.EVENT_RBUTTONDOWN: 
+                drawing = False
+                crossline = False
+                selectedContour = False
+                if currentContour.shape[0] > 2:
+                    arrayContour.append(currentContour)
+                pic = drawContours(img, arrayContour, finishColor)
+                currentContour = np.array ([])
+
+
+
+    
 pics = pd.read_csv('list.csv', header=None) # load list images
 if len(pics)==0:
     print('List have length = 0')
